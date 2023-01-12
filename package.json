@@ -1,0 +1,39 @@
+{
+  "dependencies": {
+    "axios": "^0.27.2",
+    "ws": "^8.8.0",
+    "zod": "^3.17.3"
+  },
+  "deprecated": false,
+  "description": "JS client library for Finvasia Shoonya API",
+  "devDependencies": {
+    "@types/node": "^17.0.42",
+    "@types/ws": "^8.5.3",
+    "@typescript-eslint/eslint-plugin": "^5.27.1",
+    "@typescript-eslint/parser": "^5.27.1",
+    "eslint": "^8.17.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "prettier": "^2.6.2",
+    "typedoc": "^0.22.17",
+    "typescript": "^4.7.3"
+  },
+  "keywords": [
+    "finvasia",
+    "shoonya-api",
+    "sdk"
+  ],
+  "license": "ISC",
+  "main": "dist/index.js",
+  "name": "finvasia-extra",
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
+    "prepublish": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "types": "dist/index.d.ts",
+  "version": "1.1.9"
+}

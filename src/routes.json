@@ -1,0 +1,9 @@
+{
+  "auth.login": "/QuickAuth",
+  "orders": "/OrderBook",
+  "orders.history": "/SingleOrdHist",
+  "orders.place": "/PlaceOrder",
+  "orders.modify": "/ModifyOrder",
+  "orders.cancel": "/CancelOrder",
+  "market.quote": "/GetQuotes"
+}
