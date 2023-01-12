@@ -6,27 +6,33 @@ import ApiRequest from './ApiRequest';
 const NOT_OK = 'Not_Ok';
 
 interface OrderParams {
-  exchange: string;
+  /**
+   * NSE / NFO / CDS / MCX / BSE
+   */
+  exchange: 'NSE' | 'NFO' | 'CDS' | 'MCX' | 'BSE';
   tradingSymbol: string;
-  transactionType: string;
+  // S | B
+  transactionType: 'S' | 'B';
   quantity: number;
   price: number;
-  triggerPrice: number;
+  triggerPrice?: number;
   disclosedQuantity: number;
-  product: string;
-  orderType: string;
-  validity: string;
-  tag: string;
+  // C / M / H
+  product: 'C' | 'M' | 'H';
+  // LMT, MKT, SL-LMT, SL-MKT
+  orderType: 'LMT' | 'MKT' | 'SL-LMT' | 'SL-MKT';
+  validity?: string;
+  tag?: string;
 }
 
 interface ModifyOrderParams {
-  exchange: string;
+  exchange: 'NSE' | 'NFO' | 'CDS' | 'MCX' | 'BSE';
   tradingSymbol: string;
   quantity: number;
   price: number;
-  triggerPrice: number;
-  orderType: string;
-  validity: string;
+  triggerPrice?: number;
+  orderType: 'LMT' | 'MKT' | 'SL-LMT' | 'SL-MKT';
+  validity?: string;
 }
 
 interface ModifyOrderApiParams {

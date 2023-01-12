@@ -1,16 +1,19 @@
 import ApiRequest from './ApiRequest';
 interface OrderParams {
-    exchange: string;
+    /**
+     * NSE / NFO / CDS / MCX / BSE
+     */
+    exchange: 'NSE' | 'NFO' | 'CDS' | 'MCX' | 'BSE';
     tradingSymbol: string;
-    transactionType: string;
+    transactionType: 'S' | 'B';
     quantity: number;
     price: number;
-    triggerPrice: number;
+    triggerPrice?: number;
     disclosedQuantity: number;
-    product: string;
-    orderType: string;
-    validity: string;
-    tag: string;
+    product: 'C' | 'M' | 'H';
+    orderType: 'LMT' | 'MKT' | 'SL-LMT' | 'SL-MKT';
+    validity?: string;
+    tag?: string;
 }
 interface ModifyOrderParams {
     exchange: string;
