@@ -5,5 +5,7 @@
     "orders.place": "/PlaceOrder",
     "orders.modify": "/ModifyOrder",
     "orders.cancel": "/CancelOrder",
-    "market.quote": "/GetQuotes"
+    "market.quote": "/GetQuotes",
+    "market.search": "/SearchScrip",
+    "positions.book": "/PositionBook"
 }

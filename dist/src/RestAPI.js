@@ -12,102 +12,55 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const zod_1 = require("zod");
 const util_1 = require("./util");
 const routes_json_1 = __importDefault(require("./routes.json"));
 const ApiRequest_1 = __importDefault(require("./ApiRequest"));
+const types_1 = require("./types");
+const class_transformer_1 = require("class-transformer");
 const NOT_OK = 'Not_Ok';
-const orderParamSchema = zod_1.z.object({
-    exchange: zod_1.z.string().transform((v) => v.toUpperCase()),
-    tradingSymbol: zod_1.z.string(),
-    transactionType: zod_1.z.enum(['s', 'S', 'b', 'B']).transform((v) => v.toUpperCase()),
-    quantity: zod_1.z
-        .number()
-        .positive()
-        .transform((v) => v.toString()),
-    price: zod_1.z
-        .number()
-        .nonnegative()
-        .default(0)
-        .transform((v) => v.toString()),
-    triggerPrice: zod_1.z
-        .number()
-        .nonnegative()
-        .default(0)
-        .transform((v) => v.toString()),
-    disclosedQuantity: zod_1.z
-        .number()
-        .nonnegative()
-        .default(0)
-        .transform((v) => v.toString()),
-    product: zod_1.z.enum(['nrml', 'NRML', 'mis', 'MIS', 'cnc', 'CNC']).transform((v) => {
-        switch (v.toUpperCase()) {
-            case 'NRML':
-                return 'M';
-            case 'MIS':
-                return 'I';
-            case 'CNC':
-                return 'C';
-            default:
-                return v;
-        }
-    }),
-    orderType: zod_1.z.enum(['m', 'M', 'l', 'L', 'sl', 'SL', 'sl-m', 'SL-M']).transform((v) => {
-        switch (v.toUpperCase()) {
-            case 'M':
-                return 'MKT';
-            case 'L':
-                return 'LMT';
-            case 'SL':
-                return 'SL-LMT';
-            case 'SL-M':
-                return 'SL-MKT';
-            default:
-                return v;
-        }
-    }),
-    validity: zod_1.z
-        .enum(['day', 'DAY', 'ioc', 'IOC'])
-        .default('DAY')
-        .transform((v) => v.toUpperCase()),
-    tag: zod_1.z.string().optional(),
-});
-const modifyOrderParamSchema = zod_1.z.object({
-    exchange: zod_1.z.string().transform((v) => v.toUpperCase()),
-    tradingSymbol: zod_1.z.string(),
-    quantity: zod_1.z
-        .number()
-        .positive()
-        .transform((v) => v.toString()),
-    price: zod_1.z
-        .number()
-        .nonnegative()
-        .default(0)
-        .transform((v) => v.toString()),
-    triggerPrice: zod_1.z
-        .number()
-        .nonnegative()
-        .default(0)
-        .transform((v) => v.toString()),
-    orderType: zod_1.z.enum(['m', 'M', 'l', 'L', 'sl', 'SL', 'sl-m', 'SL-M']).transform((v) => {
-        switch (v.toUpperCase()) {
-            case 'M':
-                return 'MKT';
-            case 'L':
-                return 'LMT';
-            case 'SL':
-                return 'SL-LMT';
-            case 'SL-M':
-                return 'SL-MKT';
-            default:
-                return v;
-        }
-    }),
-    validity: zod_1.z
-        .enum(['day', 'DAY', 'ioc', 'IOC'])
-        .optional()
-        .transform((v) => (v ? v.toUpperCase() : v)),
-});
+class OriginalOrderHistoryResponseItem {
+}
+class OrderHistoryResponseItem {
+    constructor(params) {
+        this.orderNumber = params.norenordno;
+        this.orderType = params.prctyp;
+        this.price = Number(params.prc);
+        this.quantity = Number(params.qty);
+        this.status = params.status;
+        this.product = params.prd;
+        this.transactionType = params.trantype;
+        this.symbol = params.tsym;
+        this.symbolFullName = params.dname;
+        this.symbolId = params.token;
+        this.createdAt = new Date().toString();
+    }
+}
+const transformOrderType = (v) => {
+    switch (v.toUpperCase()) {
+        case 'M':
+            return 'MKT';
+        case 'L':
+            return 'LMT';
+        case 'SL':
+            return 'SL-LMT';
+        case 'SL-M':
+            return 'SL-MKT';
+        default:
+            return v;
+    }
+};
+const transformProduct = (v) => {
+    switch (v.toUpperCase()) {
+        case 'NRML':
+            return 'M';
+        case 'MIS':
+            return 'I';
+        case 'CNC':
+            return 'C';
+        default:
+            return v;
+    }
+};
 class RestAPI {
     constructor(options) {
         if (!options) {
@@ -155,14 +108,14 @@ class RestAPI {
         return __awaiter(this, void 0, void 0, function* () {
             const data = yield this.apiRequest.post('orders', {}, { uid: this.userId });
             if (Array.isArray(data)) {
-                return data;
+                return data.map((item) => new OrderHistoryResponseItem(item));
             }
             // handle no data response object
             if (data.emsg && data.emsg.includes('no data')) {
                 return [];
             }
             // unknown data format
-            throw data;
+            throw data.map((item) => (Object.assign(Object.assign({}, item), { product: transformProduct(item.prd), orderType: transformOrderType(item.prctyp) })));
         });
     }
     getOrderHistory(orderId) {
@@ -187,6 +140,12 @@ class RestAPI {
             return data;
         });
     }
+    getPositionsBook() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const data = yield this.apiRequest.post('positions.book', {}, {});
+            return data.map((item) => new types_1.PositionResponseItem(item));
+        });
+    }
     getQuote(exchange, token) {
         return __awaiter(this, void 0, void 0, function* () {
             if (!exchange) {
@@ -198,11 +157,16 @@ class RestAPI {
             return this.apiRequest.post('market.quote', {}, { uid: this.userId, exch: exchange, token });
         });
     }
+    searchScript(params) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this.apiRequest.post('market.search', {}, { uid: this.userId, exch: params.exchange, stext: params.text });
+        });
+    }
     placeOrder(params) {
         return __awaiter(this, void 0, void 0, function* () {
             let parsed;
             try {
-                parsed = orderParamSchema.parse(params);
+                parsed = (0, class_transformer_1.plainToClass)(types_1.CreateOrderParams, params);
             }
             catch (error) {
                 const validationError = error.format();
@@ -242,13 +206,14 @@ class RestAPI {
         });
     }
     modifyOrder(orderId, params) {
+        var _a;
         return __awaiter(this, void 0, void 0, function* () {
             if (!orderId) {
                 throw new Error('orderId is required');
             }
             let parsed;
             try {
-                parsed = modifyOrderParamSchema.parse(params);
+                parsed = (0, class_transformer_1.plainToClass)(types_1.ModifyOrderParams, params);
             }
             catch (error) {
                 const validationError = error.format();
@@ -262,14 +227,14 @@ class RestAPI {
                 tsym: parsed.tradingSymbol,
                 prctyp: parsed.orderType,
                 prc: '0',
-                qty: parsed.quantity,
+                qty: parsed.quantity.toString(),
                 ret: parsed.validity,
             };
             if (parsed.orderType === 'SL-LMT' || parsed.orderType === 'SL-MKT') {
-                payload.trgprc = parsed.triggerPrice;
+                payload.trgprc = (_a = parsed.triggerPrice) === null || _a === void 0 ? void 0 : _a.toString();
             }
             if (parsed.orderType === 'SL-LMT' || parsed.orderType === 'LMT') {
-                payload.prc = parsed.price;
+                payload.prc = parsed.price.toString();
             }
             const data = yield this.apiRequest.post('orders.modify', {}, payload);
             data.orderId = data.result;

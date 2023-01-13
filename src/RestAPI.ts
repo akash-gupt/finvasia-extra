@@ -1,38 +1,45 @@
-import { z } from 'zod';
+import { string, z } from 'zod';
 import { sha256 } from './util';
 import routes from './routes.json';
 import ApiRequest from './ApiRequest';
+import {
+  CreateOrderParams,
+  ExchangeType,
+  ModifyOrderParams,
+  OrderType,
+  OriginalPositionResponseItem,
+  PositionResponseItem,
+  ProductType,
+  TransactionType,
+} from './types';
+import { plainToClass } from 'class-transformer';
 
 const NOT_OK = 'Not_Ok';
 
-interface OrderParams {
-  /**
-   * NSE / NFO / CDS / MCX / BSE
-   */
-  exchange: 'NSE' | 'NFO' | 'CDS' | 'MCX' | 'BSE';
-  tradingSymbol: string;
-  // S | B
-  transactionType: 'S' | 'B';
-  quantity: number;
-  price: number;
-  triggerPrice?: number;
-  disclosedQuantity: number;
-  // C / M / H
-  product: 'C' | 'M' | 'H';
-  // LMT, MKT, SL-LMT, SL-MKT
-  orderType: 'LMT' | 'MKT' | 'SL-LMT' | 'SL-MKT';
-  validity?: string;
-  tag?: string;
+export interface SearchParams {
+  exchange: ExchangeType;
+  text: string;
 }
 
-interface ModifyOrderParams {
-  exchange: 'NSE' | 'NFO' | 'CDS' | 'MCX' | 'BSE';
-  tradingSymbol: string;
-  quantity: number;
-  price: number;
-  triggerPrice?: number;
-  orderType: 'LMT' | 'MKT' | 'SL-LMT' | 'SL-MKT';
-  validity?: string;
+interface SearchResponseItem {
+  cname: string;
+  exch: ExchangeType;
+  instname: string;
+  ls: string;
+  pp: string;
+  ti: string;
+  token: string;
+  tsym: string;
+}
+
+interface SearchResponse {
+  values: SearchResponseItem[];
+}
+
+export interface OrderResponse {
+  request_time: string;
+  stat: 'Ok';
+  orderId: string;
 }
 
 interface ModifyOrderApiParams {
@@ -47,98 +54,90 @@ interface ModifyOrderApiParams {
   ret: string | undefined | null;
 }
 
-const orderParamSchema = z.object({
-  exchange: z.string().transform((v) => v.toUpperCase()),
-  tradingSymbol: z.string(),
-  transactionType: z.enum(['s', 'S', 'b', 'B']).transform((v) => v.toUpperCase()),
-  quantity: z
-    .number()
-    .positive()
-    .transform((v) => v.toString()),
-  price: z
-    .number()
-    .nonnegative()
-    .default(0)
-    .transform((v) => v.toString()),
-  triggerPrice: z
-    .number()
-    .nonnegative()
-    .default(0)
-    .transform((v) => v.toString()),
-  disclosedQuantity: z
-    .number()
-    .nonnegative()
-    .default(0)
-    .transform((v) => v.toString()),
-  product: z.enum(['nrml', 'NRML', 'mis', 'MIS', 'cnc', 'CNC']).transform((v) => {
-    switch (v.toUpperCase()) {
-      case 'NRML':
-        return 'M';
-      case 'MIS':
-        return 'I';
-      case 'CNC':
-        return 'C';
-      default:
-        return v;
-    }
-  }),
-  orderType: z.enum(['m', 'M', 'l', 'L', 'sl', 'SL', 'sl-m', 'SL-M']).transform((v) => {
-    switch (v.toUpperCase()) {
-      case 'M':
-        return 'MKT';
-      case 'L':
-        return 'LMT';
-      case 'SL':
-        return 'SL-LMT';
-      case 'SL-M':
-        return 'SL-MKT';
-      default:
-        return v;
-    }
-  }),
-  validity: z
-    .enum(['day', 'DAY', 'ioc', 'IOC'])
-    .default('DAY')
-    .transform((v) => v.toUpperCase()),
-  tag: z.string().optional(),
-});
+class OriginalOrderHistoryResponseItem {
+  actid: string;
+  exch: ExchangeType;
+  kidid: string;
+  ls: string;
+  mult: string;
+  norenordno: string;
+  norentm: string;
+  pp: string;
+  prc: string;
+  prcftr: string;
+  prctyp: OrderType;
+  prd: ProductType;
+  qty: string;
+  rejreason: string;
+  ret: string;
+  st_intrn: string;
+  stat: 'Ok';
+  status: 'REJECTED' | 'SUCCESS';
+  ti: string;
+  token: string;
+  trantype: TransactionType;
+  tsym: string;
+  uid: string;
+  dname: string;
+}
 
-const modifyOrderParamSchema = z.object({
-  exchange: z.string().transform((v) => v.toUpperCase()),
-  tradingSymbol: z.string(),
-  quantity: z
-    .number()
-    .positive()
-    .transform((v) => v.toString()),
-  price: z
-    .number()
-    .nonnegative()
-    .default(0)
-    .transform((v) => v.toString()),
-  triggerPrice: z
-    .number()
-    .nonnegative()
-    .default(0)
-    .transform((v) => v.toString()),
-  orderType: z.enum(['m', 'M', 'l', 'L', 'sl', 'SL', 'sl-m', 'SL-M']).transform((v) => {
-    switch (v.toUpperCase()) {
-      case 'M':
-        return 'MKT';
-      case 'L':
-        return 'LMT';
-      case 'SL':
-        return 'SL-LMT';
-      case 'SL-M':
-        return 'SL-MKT';
-      default:
-        return v;
-    }
-  }),
-  validity: z
-    .enum(['day', 'DAY', 'ioc', 'IOC'])
-    .optional()
-    .transform((v) => (v ? v.toUpperCase() : v)),
-});
+class OrderHistoryResponseItem {
+  symbolFullName: string;
+  symbol: string;
+  symbolId: string;
+  price: number;
+  quantity: number;
+  orderNumber: string;
+  product: ProductType;
+  orderType: OrderType;
+  transactionType: TransactionType;
+  status: 'REJECTED' | 'SUCCESS';
+  createdAt: string;
+
+  constructor(params: OriginalOrderHistoryResponseItem) {
+    this.orderNumber = params.norenordno;
+    this.orderType = params.prctyp;
+    this.price = Number(params.prc);
+    this.quantity = Number(params.qty);
+    this.status = params.status;
+    this.product = params.prd;
+    this.transactionType = params.trantype;
+    this.symbol = params.tsym;
+    this.symbolFullName = params.dname;
+    this.symbolId = params.token;
+    this.createdAt = new Date().toString();
+  }
+}
+
+type OrderHistoryResponse = OrderHistoryResponseItem[];
+
+const transformOrderType = (v: string) => {
+  switch (v.toUpperCase()) {
+    case 'M':
+      return 'MKT';
+    case 'L':
+      return 'LMT';
+    case 'SL':
+      return 'SL-LMT';
+    case 'SL-M':
+      return 'SL-MKT';
+    default:
+      return v;
+  }
+};
+
+const transformProduct = (v: string) => {
+  switch (v.toUpperCase()) {
+    case 'NRML':
+      return 'M';
+    case 'MIS':
+      return 'I';
+    case 'CNC':
+      return 'C';
+    default:
+      return v;
+  }
+};
 
 class RestAPI {
   static routes = routes;
@@ -199,10 +198,10 @@ class RestAPI {
     return data;
   }
 
-  async getOrders() {
+  async getOrders(): Promise<OrderHistoryResponse> {
     const data = await this.apiRequest.post('orders', {}, { uid: this.userId });
     if (Array.isArray(data)) {
-      return data;
+      return data.map((item: OriginalOrderHistoryResponseItem) => new OrderHistoryResponseItem(item));
     }
 
     // handle no data response object
@@ -211,7 +210,11 @@ class RestAPI {
     }
 
     // unknown data format
-    throw data;
+    throw data.map((item: any) => ({
+      ...item,
+      product: transformProduct(item.prd),
+      orderType: transformOrderType(item.prctyp),
+    }));
   }
 
   async getOrderHistory(orderId: string) {
@@ -237,6 +240,11 @@ class RestAPI {
     return data;
   }
 
+  async getPositionsBook(): Promise<PositionResponseItem[]> {
+    const data = await this.apiRequest.post('positions.book', {}, {});
+    return data.map((item: OriginalPositionResponseItem) => new PositionResponseItem(item));
+  }
+
   async getQuote(exchange: string, token: string) {
     if (!exchange) {
       throw new Error('exchange is required');
@@ -248,10 +256,14 @@ class RestAPI {
     return this.apiRequest.post('market.quote', {}, { uid: this.userId, exch: exchange, token });
   }
 
-  async placeOrder(params: OrderParams) {
+  async searchScript(params: SearchParams): Promise<SearchResponse> {
+    return this.apiRequest.post('market.search', {}, { uid: this.userId, exch: params.exchange, stext: params.text });
+  }
+
+  async placeOrder(params: CreateOrderParams): Promise<OrderResponse> {
     let parsed;
     try {
-      parsed = orderParamSchema.parse(params);
+      parsed = plainToClass(CreateOrderParams, params);
     } catch (error: any) {
       const validationError = error.format();
       validationError.errorType = 'FinvasiaValidationError';
@@ -298,7 +310,7 @@ class RestAPI {
 
     let parsed;
     try {
-      parsed = modifyOrderParamSchema.parse(params);
+      parsed = plainToClass(ModifyOrderParams, params);
     } catch (error: any) {
       const validationError = error.format();
       validationError.errorType = 'FinvasiaValidationError';
@@ -312,14 +324,14 @@ class RestAPI {
       tsym: parsed.tradingSymbol,
       prctyp: parsed.orderType,
       prc: '0',
-      qty: parsed.quantity,
+      qty: parsed.quantity.toString(),
       ret: parsed.validity,
     };
     if (parsed.orderType === 'SL-LMT' || parsed.orderType === 'SL-MKT') {
-      payload.trgprc = parsed.triggerPrice;
+      payload.trgprc = parsed.triggerPrice?.toString();
     }
     if (parsed.orderType === 'SL-LMT' || parsed.orderType === 'LMT') {
-      payload.prc = parsed.price;
+      payload.prc = parsed.price.toString();
     }
 
     const data = await this.apiRequest.post('orders.modify', {}, payload);

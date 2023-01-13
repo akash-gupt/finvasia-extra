@@ -1,29 +1,68 @@
 import ApiRequest from './ApiRequest';
-interface OrderParams {
-    /**
-     * NSE / NFO / CDS / MCX / BSE
-     */
-    exchange: 'NSE' | 'NFO' | 'CDS' | 'MCX' | 'BSE';
-    tradingSymbol: string;
-    transactionType: 'S' | 'B';
-    quantity: number;
-    price: number;
-    triggerPrice?: number;
-    disclosedQuantity: number;
-    product: 'C' | 'M' | 'H';
-    orderType: 'LMT' | 'MKT' | 'SL-LMT' | 'SL-MKT';
-    validity?: string;
-    tag?: string;
+import { CreateOrderParams, ExchangeType, ModifyOrderParams, OrderType, PositionResponseItem, ProductType, TransactionType } from './types';
+export interface SearchParams {
+    exchange: ExchangeType;
+    text: string;
 }
-interface ModifyOrderParams {
-    exchange: string;
-    tradingSymbol: string;
-    quantity: number;
-    price: number;
-    triggerPrice: number;
-    orderType: string;
-    validity: string;
+interface SearchResponseItem {
+    cname: string;
+    exch: ExchangeType;
+    instname: string;
+    ls: string;
+    pp: string;
+    ti: string;
+    token: string;
+    tsym: string;
 }
+interface SearchResponse {
+    values: SearchResponseItem[];
+}
+export interface OrderResponse {
+    request_time: string;
+    stat: 'Ok';
+    orderId: string;
+}
+declare class OriginalOrderHistoryResponseItem {
+    actid: string;
+    exch: ExchangeType;
+    kidid: string;
+    ls: string;
+    mult: string;
+    norenordno: string;
+    norentm: string;
+    pp: string;
+    prc: string;
+    prcftr: string;
+    prctyp: OrderType;
+    prd: ProductType;
+    qty: string;
+    rejreason: string;
+    ret: string;
+    st_intrn: string;
+    stat: 'Ok';
+    status: 'REJECTED' | 'SUCCESS';
+    ti: string;
+    token: string;
+    trantype: TransactionType;
+    tsym: string;
+    uid: string;
+    dname: string;
+}
+declare class OrderHistoryResponseItem {
+    symbolFullName: string;
+    symbol: string;
+    symbolId: string;
+    price: number;
+    quantity: number;
+    orderNumber: string;
+    product: ProductType;
+    orderType: OrderType;
+    transactionType: TransactionType;
+    status: 'REJECTED' | 'SUCCESS';
+    createdAt: string;
+    constructor(params: OriginalOrderHistoryResponseItem);
+}
+type OrderHistoryResponse = OrderHistoryResponseItem[];
 declare class RestAPI {
     static routes: {
         "auth.login": string;
@@ -33,6 +72,8 @@ declare class RestAPI {
         "orders.modify": string;
         "orders.cancel": string;
         "market.quote": string;
+        "market.search": string;
+        "positions.book": string;
     };
     static baseURL: string;
     apiRequest: ApiRequest;
@@ -48,10 +89,12 @@ declare class RestAPI {
     setUserId(userId: string): void;
     setAccessToken(accessToken: string): void;
     login(userId: string, password: string, factor2: string, vendorCode: string, apiKey: string, imei?: string): Promise<any>;
-    getOrders(): Promise<any[]>;
+    getOrders(): Promise<OrderHistoryResponse>;
     getOrderHistory(orderId: string): Promise<any>;
+    getPositionsBook(): Promise<PositionResponseItem[]>;
     getQuote(exchange: string, token: string): Promise<any>;
-    placeOrder(params: OrderParams): Promise<any>;
+    searchScript(params: SearchParams): Promise<SearchResponse>;
+    placeOrder(params: CreateOrderParams): Promise<OrderResponse>;
     cancelOrder(orderId: string): Promise<any>;
     modifyOrder(orderId: string, params: ModifyOrderParams): Promise<any>;
 }
