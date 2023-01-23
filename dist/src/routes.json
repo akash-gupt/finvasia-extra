@@ -7,5 +7,6 @@
     "orders.cancel": "/CancelOrder",
     "market.quote": "/GetQuotes",
     "market.search": "/SearchScrip",
-    "positions.book": "/PositionBook"
+    "positions.book": "/PositionBook",
+    "market.series": "/TPSeries"
 }

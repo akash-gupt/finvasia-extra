@@ -5,6 +5,10 @@ import ApiRequest from './ApiRequest';
 import {
   CreateOrderParams,
   ExchangeType,
+  GetOriginalTimeSeriesResponseItem,
+  GetTimeSeriesParams,
+  GetTimeSeriesResponse,
+  GetTimeSeriesResponseItem,
   ModifyOrderParams,
   OrderType,
   OriginalPositionResponseItem,
@@ -217,6 +221,23 @@ class RestAPI {
     }));
   }
 
+  async getTimeSeries(params: GetTimeSeriesParams): Promise<GetTimeSeriesResponse> {
+    const data = await this.apiRequest.post(
+      'market.series',
+      {},
+      {
+        uid: this.userId,
+        exch: params.exchange,
+        token: params.token,
+        st: params.startTime?.toString(),
+        et: params.endTime?.toString(),
+        intrv: params.interval,
+      }
+    );
+
+    return data.map((item: GetOriginalTimeSeriesResponseItem) => new GetTimeSeriesResponseItem(item));
+  }
+
   async getOrderHistory(orderId: string) {
     if (!orderId) {
       throw new Error('orderId is required');
@@ -276,9 +297,9 @@ class RestAPI {
       exch: parsed.exchange,
       tsym: parsed.tradingSymbol,
       trantype: parsed.transactionType,
-      qty: parsed.quantity,
-      prc: parsed.price,
-      trgprc: parsed.triggerPrice,
+      qty: parsed.quantity.toString(),
+      prc: parsed.price.toString(),
+      trgprc: parsed.triggerPrice?.toString(),
       dscqty: parsed.disclosedQuantity,
       prd: parsed.product,
       prctyp: parsed.orderType,

@@ -1,5 +1,5 @@
 import ApiRequest from './ApiRequest';
-import { CreateOrderParams, ExchangeType, ModifyOrderParams, OrderType, PositionResponseItem, ProductType, TransactionType } from './types';
+import { CreateOrderParams, ExchangeType, GetTimeSeriesParams, GetTimeSeriesResponse, ModifyOrderParams, OrderType, PositionResponseItem, ProductType, TransactionType } from './types';
 export interface SearchParams {
     exchange: ExchangeType;
     text: string;
@@ -62,7 +62,7 @@ declare class OrderHistoryResponseItem {
     createdAt: string;
     constructor(params: OriginalOrderHistoryResponseItem);
 }
-type OrderHistoryResponse = OrderHistoryResponseItem[];
+declare type OrderHistoryResponse = OrderHistoryResponseItem[];
 declare class RestAPI {
     static routes: {
         "auth.login": string;
@@ -74,6 +74,7 @@ declare class RestAPI {
         "market.quote": string;
         "market.search": string;
         "positions.book": string;
+        "market.series": string;
     };
     static baseURL: string;
     apiRequest: ApiRequest;
@@ -90,6 +91,7 @@ declare class RestAPI {
     setAccessToken(accessToken: string): void;
     login(userId: string, password: string, factor2: string, vendorCode: string, apiKey: string, imei?: string): Promise<any>;
     getOrders(): Promise<OrderHistoryResponse>;
+    getTimeSeries(params: GetTimeSeriesParams): Promise<GetTimeSeriesResponse>;
     getOrderHistory(orderId: string): Promise<any>;
     getPositionsBook(): Promise<PositionResponseItem[]>;
     getQuote(exchange: string, token: string): Promise<any>;

@@ -118,6 +118,20 @@ class RestAPI {
             throw data.map((item) => (Object.assign(Object.assign({}, item), { product: transformProduct(item.prd), orderType: transformOrderType(item.prctyp) })));
         });
     }
+    getTimeSeries(params) {
+        var _a, _b;
+        return __awaiter(this, void 0, void 0, function* () {
+            const data = yield this.apiRequest.post('market.series', {}, {
+                uid: this.userId,
+                exch: params.exchange,
+                token: params.token,
+                st: (_a = params.startTime) === null || _a === void 0 ? void 0 : _a.toString(),
+                et: (_b = params.endTime) === null || _b === void 0 ? void 0 : _b.toString(),
+                intrv: params.interval,
+            });
+            return data.map((item) => new types_1.GetTimeSeriesResponseItem(item));
+        });
+    }
     getOrderHistory(orderId) {
         return __awaiter(this, void 0, void 0, function* () {
             if (!orderId) {
@@ -163,6 +177,7 @@ class RestAPI {
         });
     }
     placeOrder(params) {
+        var _a;
         return __awaiter(this, void 0, void 0, function* () {
             let parsed;
             try {
@@ -179,9 +194,9 @@ class RestAPI {
                 exch: parsed.exchange,
                 tsym: parsed.tradingSymbol,
                 trantype: parsed.transactionType,
-                qty: parsed.quantity,
-                prc: parsed.price,
-                trgprc: parsed.triggerPrice,
+                qty: parsed.quantity.toString(),
+                prc: parsed.price.toString(),
+                trgprc: (_a = parsed.triggerPrice) === null || _a === void 0 ? void 0 : _a.toString(),
                 dscqty: parsed.disclosedQuantity,
                 prd: parsed.product,
                 prctyp: parsed.orderType,
