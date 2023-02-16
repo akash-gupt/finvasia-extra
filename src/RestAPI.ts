@@ -262,7 +262,7 @@ class RestAPI {
   }
 
   async getPositionsBook(): Promise<PositionResponseItem[]> {
-    const data = await this.apiRequest.post('positions.book', {}, {});
+    const data = await this.apiRequest.post('positions.book', {}, { uid: this.userId, actid: this.accountId });
     return data.map((item: OriginalPositionResponseItem) => new PositionResponseItem(item));
   }
 

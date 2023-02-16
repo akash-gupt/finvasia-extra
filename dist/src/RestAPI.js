@@ -156,7 +156,7 @@ class RestAPI {
     }
     getPositionsBook() {
         return __awaiter(this, void 0, void 0, function* () {
-            const data = yield this.apiRequest.post('positions.book', {}, {});
+            const data = yield this.apiRequest.post('positions.book', {}, { uid: this.userId, actid: this.accountId });
             return data.map((item) => new types_1.PositionResponseItem(item));
         });
     }
